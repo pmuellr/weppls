@@ -160,9 +160,7 @@ createViews = (iDir, oDir, options) ->
             // generated on #{weppls.getDate()} by #{Program} #{Version}
 
             exports.controller = function($scope){
-                $scope.$on("$routeChangeSuccess", function(next, current) {
-                    $(".navbar-collapse").collapse("hide");
-                });
+                /*no-op*/
             };
         """
         content.to oFile

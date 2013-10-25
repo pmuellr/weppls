@@ -9,12 +9,11 @@ child_process = require "child_process"
 
 bower_files   = require "./bower-files"
 
+mkdir "-p", "tmp"
+pidFile = "tmp/server.pid"
+
 # base name of this file, for watch()
 __basename    = path.basename __filename
-
-# pid file for server
-mkdir "-p", "tmp"
-ServerPidFile = path.join __dirname, "tmp", "server.pid"
 
 exports.build =
     doc: "run a build against the source files"
@@ -32,7 +31,14 @@ exports.vendor =
     doc: "get vendor files"
     run: -> taskVendor()
 
-process.on "exit", -> server.kill ServerPidFile
+exports.serve =
+    doc: "run serve on this directory at port 3005"
+    run: -> taskServe()
+
+#-------------------------------------------------------------------------------
+taskServe = ->
+    server.kill pidFile, ->
+        server.start pidFile, "node_modules/.bin/serve", "-p 3005".split(" ")
 
 #-------------------------------------------------------------------------------
 taskBuild = ->
@@ -45,7 +51,7 @@ taskTest = ->
 
     for sample in samples
         cmd = """
-            node lib/cli.js 
+            node bin/weppls.js 
                 --verbose 
                 --output tmp/sample-#{sample} 
                 samples/sample-#{sample}
@@ -69,7 +75,6 @@ taskWatch =  ->
         files: __basename
         run: -> 
             log "file #{__basename} changed; exiting"
-            server.kill ServerPidFile
             process.exit 0
 
 #-------------------------------------------------------------------------------
@@ -97,7 +102,9 @@ taskVendor =  ->
 #-------------------------------------------------------------------------------
 buildNtest =  ->
     taskBuild()
-    process.nextTick taskTest
+    process.nextTick ->
+        taskTest()
+        taskServe()
 
 #-------------------------------------------------------------------------------
 coffeec = (src, out) -> 

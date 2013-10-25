@@ -30,6 +30,15 @@ Then run `weppls`, and the following things will happen:
 
 You should then be able to open the `index.html` file and see your app.
 
+installation
+--------------------------------------------------------------------------------
+
+Install globally via: *(`sudo` not needed for windows)*
+
+    sudo npm install -g git://github.com/pmuellr/weppls
+
+This will install a global command `weppls`.
+
 
 simple sample
 --------------------------------------------------------------------------------

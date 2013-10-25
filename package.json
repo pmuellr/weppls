@@ -4,7 +4,7 @@
   "bin":               { "weppls": "./bin/weppls.js" },
   "description":       "WEb aPPLicationS",
   "author":            "pmuellr",
-  "version":           "0.1.0",
+  "version":           "0.1.1",
   "licenses":          [{ "type": "Apache License" }],
   "dependencies":
     {
@@ -17,6 +17,7 @@
     },
   "devDependencies":
     {
+      "serve":            "1.3.x"
     },
   "homepage":          "https://github.com/pmuellr/weppls",
   "bugs":              "https://github.com/pmuellr/weppls/issues",

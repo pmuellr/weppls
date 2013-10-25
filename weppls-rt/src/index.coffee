@@ -5,14 +5,23 @@ routes      = require "./routes"
 
 weppls = exports
 
-weppls._ = {}
-
 #-------------------------------------------------------------------------------
 weppls.main = ->
-    weppls.angularModule = angular.module "app", []
+    angularModule = angular.module "app", []
 
-    controllers.configure weppls.angularModule
-    routes.configure      weppls.angularModule
+    controllers.configure angularModule
+    routes.configure      angularModule
+
+    $ -> onLoad()
+
+    # angularModule.config ($rootScope) ->
+    #     $rootScope.$on "$routeChangeStart", (next, current) ->
+    #         $(".navbar-collapse").collapse "hide"
+
+#-------------------------------------------------------------------------------
+onLoad = ->
+    $(".nav.navbar-nav").click ->
+        $(".navbar-collapse").collapse "hide"
 
 #-------------------------------------------------------------------------------
 weppls.log = (message) ->
