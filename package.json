@@ -1,0 +1,25 @@
+{
+  "name":              "weppls",
+  "main":              "./lib/weppls",
+  "bin":               { "weppls": "./lib/cli.js" },
+  "description":       "WEb aPPLicationS",
+  "author":            "pmuellr",
+  "version":           "0.1.0",
+  "licenses":          [{ "type": "Apache License" }],
+  "dependencies":
+    {
+      "browserify":       "2.34.x",
+      "coffee-script":    "1.6.x",
+      "marked":           "0.2.x",
+      "nopt":             "2.1.x",
+      "shelljs":          "0.2.x",
+      "underscore":       "1.5.x"
+    },
+  "devDependencies":
+    {
+    },
+  "homepage":          "https://github.com/pmuellr/weppls",
+  "bugs":              "https://github.com/pmuellr/weppls/issues",
+  "repository":        { "type": "git", "url": "git://github.com/pmuellr/weppls" }
+}
+
