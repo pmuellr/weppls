@@ -1,10 +1,10 @@
-# Licensed under the Apache License. See footer for details.
+#!/usr/bin/env node
 
-bower_components
-node_modules
+// Licensed under the Apache License. See footer for details.
 
-tmp
+require("../lib/cli").main(process.argv.slice(2))
 
+/*
 #-------------------------------------------------------------------------------
 # Copyright 2013 Patrick Mueller
 # 
@@ -20,3 +20,4 @@ tmp
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #-------------------------------------------------------------------------------
+*/

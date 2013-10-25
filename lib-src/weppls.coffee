@@ -13,6 +13,9 @@ weppls = exports
 
 iSubDirs = "views services filters directives".split " "
 
+Program = pkg.name
+Version = pkg.version
+
 Verbose = false
 
 #-------------------------------------------------------------------------------
@@ -100,13 +103,29 @@ createViews = (iDir, oDir, options) ->
             weppls.log "ignoring view file #{name}.coffee as there is already an #{name}.js file"
             continue
 
-        jFiles[name] = coffee.compile content
+        options = 
+            bare: true
+
+        jFiles[name] = coffee.compile content, options
 
     # write the views module
     oFile = path.join oDir, "m", "views.js"
 
-    content = JSON.stringify hFiles, null, 4
-    content = "module.exports = #{content}"
+    hNames   = _.keys hFiles
+    hNameLen = (_.max hNames, (hName) -> hName.length).length
+
+    content = []
+    for name, fileContent of hFiles
+        pad = weppls.align.left "", hNameLen - name.length
+        content.push "    #{JSON.stringify name}:#{pad} #{JSON.stringify fileContent}"
+
+    content = """
+        // generated on #{weppls.getDate()} by #{Program} #{Version}
+
+        module.exports = {
+        #{content.join ",\n"}
+        };
+        """
     content.to oFile
 
     # write the controllers
@@ -120,40 +139,161 @@ createViews = (iDir, oDir, options) ->
     hFiles = _.keys hFiles
     jFiles = _.keys jFiles
 
+    # write missing controllers
     jFilesMissing = _.difference hFiles, jFiles
 
     for jFile in jFilesMissing
         oFile = path.join viewsDir, "#{jFile}.js"
-        content = "exports.controller = function($scope){/*no-op*/}"
+        content = """
+            // generated on #{weppls.getDate()} by #{Program} #{Version}
+
+            exports.controller = function($scope){
+                /*no-op*/
+            };
+        """
         content.to oFile
 
+    # write a missing body controller
+    if "body" not in jFiles
+        oFile = path.join viewsDir, "body.js"
+        content = """
+            // generated on #{weppls.getDate()} by #{Program} #{Version}
+
+            exports.controller = function($scope){
+                $scope.$on("$routeChangeSuccess", function(next, current) {
+                    $(".navbar-collapse").collapse("hide");
+                });
+            };
+        """
+        content.to oFile
+
+    # complain about extraneous controllers
     jFilesExtra = _.difference jFiles, hFiles
 
     for jFile in jFilesExtra
         weppls.log "extraneous module in views: #{jFile}"
 
+    # write controller initializer
+    cFiles = hFiles.slice()
+    cFiles.unshift "body"
+
+    cFileLen = (_.max cFiles, (cFile) -> cFile.length).length
+
+    content = _.map cFiles, (cFile) ->
+        pad = weppls.align.left "", cFileLen - cFile.length
+
+        "    angularModule.controller('#{cFile}'#{pad}, require('./views/#{cFile}'#{pad}).controller);"
+
+    content = """
+        // generated on #{weppls.getDate()} by #{Program} #{Version}
+
+        exports.configure = function(angularModule) {
+        #{content.join '\n'}
+        };
+    """
+
+    oFile = path.join oDir, "m", "controllers.js"
+    content.to oFile
+
+    # create a default routes module
+    content = _.map hFiles, (hFile) ->
+        url = "/#{hFile}"
+        url = "/" if hFile is "home"
+
+        padH = weppls.align.left "", cFileLen - hFile.length
+        padU = weppls.align.left "", cFileLen - url.length + 1
+
+        "        $routeProvider.when('#{url}', #{padU}{controller:'#{hFile}', #{padH}template: views['#{hFile}']});"
+
+    content = """
+        // generated on #{weppls.getDate()} by #{Program} #{Version}
+
+        var views = require("./views");
+
+        exports.configure = function(angularModule) {
+            angularModule.config(function($routeProvider){
+                $routeProvider.otherwise({redirectTo: "/"});
+
+        #{content.join '\n'}
+            })
+
+        };
+    """
+
+    oFile = path.join oDir, "m", "routes.js"
+    content.to oFile
+
     return
 
 #-------------------------------------------------------------------------------
 copyResources = (iDir, oDir, options) ->
+
+    #copy user directories 
     subDirs = sh.ls iDir
-    subDirs = _.filter subDirs, (subDir) -> sh.test "-d", path.join oDir, subDir
+    subDirs = _.filter subDirs, (subDir) -> sh.test "-d", path.join iDir, subDir
     subDirs = _.filter subDirs, (subDir) -> subDir not in iSubDirs
 
     for subDir in subDirs
         iSubDir = path.join iDir, subDir
-        oSubDir = path.join oDir, subDir
 
-        sh.mkdir "-p", oSubDir
-        sh.cp "-R", iSubDir, oSubDir
+        sh.cp "-R", iSubDir, oDir
+
+    # copy vendor files
+    oSubDir   = path.join oDir, "vendor"
+    vendorDir = path.join __dirname, "..", "vendor"
+
+    sh.cp "-R", vendorDir, oDir
 
     return
 
 #-------------------------------------------------------------------------------
 createIndexHtml = (iDir, oDir, options) ->
+    iFile = path.join iDir, "index.html"
+    bFile = path.join iDir, "body.html"
+    mFile = path.join iDir, "menu.html"
+
+    error "index.html file not found in #{iDir}" if !sh.test "-f", iFile
+    error "body.html file not found in #{iDir}"  if !sh.test "-f", bFile
+    error "menu.html file not found in #{iDir}"  if !sh.test "-f", mFile
+
+    iFile = sh.cat iFile
+    bFile = sh.cat bFile
+    mFile = sh.cat mFile
+
+    iFile = iFile.replace "{{body}}", bFile
+    iFile = iFile.replace "{{menu}}", mFile
+
+    content = """
+        #{iFile}
+
+        <!-- generated on #{weppls.getDate()} by #{Program} #{Version} -->
+    """
+
+    oFile = path.join oDir, "index.html"
+    content.to oFile
 
 #-------------------------------------------------------------------------------
 createIndexScript = (iDir, oDir, options) ->
+    baseDir = path.join __dirname, ".."
+
+    # copy weppls-rt as main.js
+    mainFile = path.join baseDir, "weppls-rt", "lib", "index.js"
+    sh.cp mainFile, path.join(oDir, "m", "main.js")
+
+    # run browserify, producing index.js
+    mFile = path.join oDir, "m", "main.js"
+    oFile = path.join oDir, "index.js"
+    browserify = path.join baseDir, "node_modules", ".bin", "browserify"
+    cmd = "#{browserify}  #{mFile} --outfile #{oFile} --debug"
+
+    sh.exec cmd
+
+    # run sourcemap splitter
+    splitTool = path.join baseDir, "tools", "split-sourcemap-data-url.coffee"
+    coffee    = path.join baseDir, "node_modules", ".bin", "coffee"
+    cmd = "#{coffee} #{splitTool} #{oFile}"
+
+    sh.exec cmd
 
 #-------------------------------------------------------------------------------
 weppls.log = (message) ->
@@ -176,6 +316,45 @@ weppls.error = (message) ->
     weppls.log message
     process.exit 1
     return
+
+#-------------------------------------------------------------------------------
+weppls.getDate = () ->
+    date = new Date()
+
+    yr  = date.getFullYear()
+    mon = date.getMonth() + 1
+    day = date.getDate()
+    hr  = date.getHours()
+    min = date.getMinutes()
+    sec = date.getSeconds()
+    ms  = date.getMilliseconds()
+
+    mon = weppls.align.right "#{mon}" , 2, 0
+    day = weppls.align.right "#{day}" , 2, 0
+    hr  = weppls.align.right "#{hr }" , 2, 0
+    min = weppls.align.right "#{min}" , 2, 0
+    sec = weppls.align.right "#{sec}" , 2, 0
+
+    result = "#{yr}-#{mon}-#{day} #{hr}:#{min}:#{sec}"
+    return result
+
+#-------------------------------------------------------------------------------
+weppls.align = (s, dir, len, pad=" ") ->
+    switch dir[0]
+        when "l" then add = (s) -> "#{s}#{pad}"
+        when "r" then add = (s) -> "#{pad}#{s}"
+        else throw Error "invalid dir argument to align: #{dir}"
+
+    s   = "#{s}"
+    pad = "#{pad}"
+    while s.length < len
+        s = add s
+
+    return s
+
+#-------------------------------------------------------------------------------
+weppls.align.left  = (s, len, pad=" ") -> weppls.align s, "left",  len, pad
+weppls.align.right = (s, len, pad=" ") -> weppls.align s, "right", len, pad
 
 #-------------------------------------------------------------------------------
 # Copyright 2013 Patrick Mueller

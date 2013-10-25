@@ -60,7 +60,7 @@ taskWatch =  ->
 
     # watch for changes to sources, run a build
     watch
-        files: ["lib-src/**/*", "weppls-rt/src/**/*"]
+        files: ["lib-src/**/*", "weppls-rt/src/**/*", "samples/**/*"]
         run: -> 
             buildNtest()
 
@@ -106,7 +106,7 @@ coffeec = (src, out) ->
     mkdir "-p", "#{out}"
     rm          "#{out}/*"
 
-    coffee "--compile --output #{out} #{src}/*.coffee"
+    coffee "--compile --bare --output #{out} #{src}/*.coffee"
 
 #-------------------------------------------------------------------------------
 coffee = (cmd) -> 

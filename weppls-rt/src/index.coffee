@@ -1,6 +1,7 @@
 # Licensed under the Apache License. See footer for details.
 
-views = require "./views"
+controllers = require "./controllers"
+routes      = require "./routes"
 
 weppls = exports
 
@@ -8,44 +9,10 @@ weppls._ = {}
 
 #-------------------------------------------------------------------------------
 weppls.main = ->
-    weppls.module = angular.module "app", ["ngRoute"]
+    weppls.angularModule = angular.module "app", []
 
-    weppls.module.configure ($routeProvider) ->
-
-        $routeProvider.otherwise 
-            redirectTo:  "/"
-
-        for controller, [url, html] of routes
-            $routeProvider.when url, 
-                controller:  controller
-                template:    views[html]
-
-
-#-------------------------------------------------------------------------------
-weppls.route = (args) ->
-    weppls.error "no arguments" if !args? 
-
-    if typeof args is "string"
-        args =
-            url: "/#{args}"
-            menu: args
-            view: args
-
-        args.url = "/" if args.view is "home"
-
-    {url, menu, view} = args
-
-    weppls.error "no url argument"  if !url?
-    weppls.error "no menu argument" if !menu?
-    weppls.error "no view argument" if !view?
-
-    if !weppls._routeAdded?
-        weppls._routeAdded = true
-        $routeProvider.otherwise redirectTo: "/"
-
-    $routeProvider.when url,
-        controller: view
-        template:   views[view]    
+    controllers.configure weppls.angularModule
+    routes.configure      weppls.angularModule
 
 #-------------------------------------------------------------------------------
 weppls.log = (message) ->

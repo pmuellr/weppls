@@ -2,5 +2,5 @@ hello = exports
 
 #-------------------------------------------------------------------------------
 hello.controller = ($scope) ->
-    $scope.text
+    $scope.text =
         world: "WORLD!!!"
