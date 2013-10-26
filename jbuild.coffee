@@ -47,12 +47,11 @@ taskBuild = ->
 
 #-------------------------------------------------------------------------------
 taskTest = ->
-    samples = [ "01" ]
+    samples = "01 02".split " "
 
     for sample in samples
         cmd = """
             node bin/weppls.js 
-                --verbose 
                 --output tmp/sample-#{sample} 
                 samples/sample-#{sample}
         """.replace /\s+/g, " "

@@ -1,6 +1,8 @@
 # Licensed under the Apache License. See footer for details.
 
 controllers = require "./controllers"
+services    = require "./services"
+filters     = require "./filters"
 routes      = require "./routes"
 
 weppls = exports
@@ -10,6 +12,8 @@ weppls.main = ->
     angularModule = angular.module "app", []
 
     controllers.configure angularModule
+    services.configure    angularModule
+    filters.configure     angularModule
     routes.configure      angularModule
 
     $ -> onLoad()

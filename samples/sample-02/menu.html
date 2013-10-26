@@ -6,12 +6,14 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
         </button>
-        <span class="navbar-brand" href="#/">weppls sample-01</span>
+        <span class="navbar-brand" href="#/">weppls sample-02<span ng-bind="getSubtitle()"></span></span>
     </div>    
     <div class="collapse navbar-collapse">
         <ul class="nav navbar-nav navbar-right pull-right">
-            <li><a href="#/">home</a>
-            <li><a href="#/hello">hello</a>
+            <li><a href="#/"         >home</a>
+            <li><a href="#/messages">messages 
+                <span ng-show="messages.length" class="badge" ng-bind="messages.length"></span>
+            </a>
         </ul>
     </div>
 </div>

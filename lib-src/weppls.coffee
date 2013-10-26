@@ -29,6 +29,8 @@ weppls.run = (dir, options={}) ->
 
     main dir, options
 
+    return
+
 #-------------------------------------------------------------------------------
 main = (iDir, options) ->
     oDir = options.output
@@ -49,14 +51,157 @@ main = (iDir, options) ->
     sh.mkdir "-p", path.join(oDir, "m")
 
     createViews       iDir, oDir, options
+    createFilters     iDir, oDir, options
+    createServices    iDir, oDir, options
     createIndexHtml   iDir, oDir, options
     createIndexScript iDir, oDir, options
     copyResources     iDir, oDir, options
 
+    return
+
+#-------------------------------------------------------------------------------
+createServices = (iDir, oDir, options) ->
+    iDir  = path.join iDir, "services"
+
+    if sh.test "-d", iDir
+        files = sh.ls iDir
+    else
+        files = []
+
+    cFiles = {}
+    jFiles = {}
+
+    for file in files
+        fullFile = path.join iDir, file
+
+        match = file.match /^(.*)\.(.*)$/
+        continue unless match
+
+        base = match[1]
+        ext  = match[2]
+
+        switch ext
+            when "coffee" then cFiles[base] = sh.cat fullFile
+            when "js"     then jFiles[base] = sh.cat fullFile
+            else                             
+                weppls.log "ignoring unknown file type in services subdirectory: #{file}"
+
+    # compile coffeescript 
+    for name, content of cFiles
+        if jFiles[name]?
+            weppls.log "ignoring service file #{name}.coffee as there is already an #{name}.js file"
+            continue
+
+        options = 
+            bare: true
+
+        jFiles[name] = coffee.compile content, options
+
+    # write the servicess
+    servicesDir = path.join oDir, "m", "services"
+
+    sh.mkdir "-p", servicesDir
+    for name, content of jFiles
+        oFile = path.join servicesDir, "#{name}.js"
+        content.to oFile
+
+    # write services initializer
+    jFiles = _.keys jFiles
+    jFileLen = (_.max jFiles, (jFile) -> jFile.length).length
+
+    content = _.map jFiles, (jFile) ->
+        pad = weppls.align.left "", jFileLen - jFile.length
+
+        "    angularModule.service('#{jFile}'#{pad}, require('./services/#{jFile}'#{pad}).service);"
+
+    content = """
+        // generated on #{weppls.getDate()} by #{Program} #{Version}
+
+        exports.configure = function(angularModule) {
+        #{content.join '\n'}
+        };
+    """
+
+    oFile = path.join oDir, "m", "services.js"
+    content.to oFile
+
+    return
+
+#-------------------------------------------------------------------------------
+createFilters = (iDir, oDir, options) ->
+    iDir  = path.join iDir, "filters"
+
+    if sh.test "-d", iDir
+        files = sh.ls iDir
+    else
+        files = []
+
+    cFiles = {}
+    jFiles = {}
+
+    for file in files
+        fullFile = path.join iDir, file
+
+        match = file.match /^(.*)\.(.*)$/
+        continue unless match
+
+        base = match[1]
+        ext  = match[2]
+
+        switch ext
+            when "coffee" then cFiles[base] = sh.cat fullFile
+            when "js"     then jFiles[base] = sh.cat fullFile
+            else                             
+                weppls.log "ignoring unknown file type in filters subdirectory: #{file}"
+
+    # compile coffeescript 
+    for name, content of cFiles
+        if jFiles[name]?
+            weppls.log "ignoring service file #{name}.coffee as there is already an #{name}.js file"
+            continue
+
+        options = 
+            bare: true
+
+        jFiles[name] = coffee.compile content, options
+
+    # write the servicess
+    filtersDir = path.join oDir, "m", "filters"
+
+    sh.mkdir "-p", filtersDir
+    for name, content of jFiles
+        oFile = path.join filtersDir, "#{name}.js"
+        content.to oFile
+
+    # write filters initializer
+    jFiles = _.keys jFiles
+    jFileLen = (_.max jFiles, (jFile) -> jFile.length).length
+
+    content = _.map jFiles, (jFile) ->
+        pad = weppls.align.left "", jFileLen - jFile.length
+
+        "    angularModule.filter('#{jFile}'#{pad}, require('./filters/#{jFile}'#{pad}).filter);"
+
+    content = """
+        // generated on #{weppls.getDate()} by #{Program} #{Version}
+
+        exports.configure = function(angularModule) {
+        #{content.join '\n'}
+        };
+    """
+
+    oFile = path.join oDir, "m", "filters.js"
+    content.to oFile
+
+    return
+
 #-------------------------------------------------------------------------------
 createViews = (iDir, oDir, options) ->
-    iDir = path.join iDir, "views"
-    files = sh.ls iDir
+    iDir  = path.join iDir, "views"
+    if sh.test "-d", iDir
+        files = sh.ls iDir
+    else
+        weppls.error "no views in the views directory"
 
     cFiles = {}
     hFiles = {}
@@ -166,7 +311,8 @@ createViews = (iDir, oDir, options) ->
         content.to oFile
 
     # complain about extraneous controllers
-    jFilesExtra = _.difference jFiles, hFiles
+    jFilesExtra = _.difference jFiles,      hFiles
+    jFilesExtra = _.without    jFilesExtra, "body"
 
     for jFile in jFilesExtra
         weppls.log "extraneous module in views: #{jFile}"
@@ -270,6 +416,8 @@ createIndexHtml = (iDir, oDir, options) ->
     oFile = path.join oDir, "index.html"
     content.to oFile
 
+    return
+
 #-------------------------------------------------------------------------------
 createIndexScript = (iDir, oDir, options) ->
     baseDir = path.join __dirname, ".."
@@ -292,6 +440,8 @@ createIndexScript = (iDir, oDir, options) ->
     cmd = "#{coffee} #{splitTool} #{oFile}"
 
     sh.exec cmd
+
+    return
 
 #-------------------------------------------------------------------------------
 weppls.log = (message) ->

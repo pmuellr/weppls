@@ -81,6 +81,7 @@ to be associated with the "root" of your application;
 specifically, the url `/`, in the angular sense.
 
 
+<!-- ============================== -->
 ### build the sample ###
 
 Run:
@@ -115,7 +116,7 @@ The following subdirectories of your root directory are special:
 * `directives`
 * `filters`
 
-
+<!-- ============================== -->
 ### the views directory ###
 
 The `views` directory contains the angular HTML templates for your views, and
@@ -155,17 +156,45 @@ have a route of `/hello`.
 >     
 >      <!-- @route /foo/:bar -->
 
+
+<!-- ============================== -->
 ### the services directory ###
 
-not yet implemented
+The `services` directory contains the angular services for your application.
+
+The service files can either be JavaScript files (`*.js`) or CoffeeScript
+files (`*.coffee`).  CoffeeScript files will be converted to JavaScript.
+
+The service files are expected to be Node.js-ish modules, which export
+a single constructor function named `service`.  These service functions will be
+registered with angular via:
+
+    module.service(moduleName, serviceFunction)
+
+In this case `module` is the angular module object that `weppls` creates 
+for your app, and `moduleName` is the base name of the service file.
 
 
-### the directives directory ###
-
-not yet implemented
-
-
+<!-- ============================== -->
 ### the filters directory ###
+
+The `filters` directory contains the angular filters for your application.
+
+The filter files can either be JavaScript files (`*.js`) or CoffeeScript
+files (`*.coffee`).  CoffeeScript files will be converted to JavaScript.
+
+The filter files are expected to be Node.js-ish modules, which export
+a single function named `filter`.  These filter functions will be
+registered with angular via:
+
+    module.filter(moduleName, filterFunction)
+
+In this case `module` is the angular module object that `weppls` creates 
+for your app, and `moduleName` is the base name of the filter file.
+
+
+<!-- ============================== -->
+### the directives directory ###
 
 not yet implemented
 

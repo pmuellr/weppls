@@ -1,6 +1,3 @@
-hello = exports
-
-#-------------------------------------------------------------------------------
-hello.controller = ($scope) ->
+exports.controller = ($scope) ->
     $scope.text =
         world: "WORLD!!!"
