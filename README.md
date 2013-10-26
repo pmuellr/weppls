@@ -35,7 +35,7 @@ installation
 
 Install globally via: *(`sudo` not needed for windows)*
 
-    sudo npm install -g git://github.com/pmuellr/weppls
+    sudo npm install weppls
 
 This will install a global command `weppls`.
 
